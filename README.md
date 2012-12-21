@@ -6,7 +6,7 @@ A parser for the Virginia Dangerous Dogs Registry. Scrapes pages, saves a flat H
 
 Create a blank file with permissions that will allow the web server to write to it.
 
-```touch index.html
+```touch index.html;
 chmod o+w index.html```
 
 ## To Do
