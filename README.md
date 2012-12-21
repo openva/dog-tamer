@@ -9,6 +9,10 @@ Create a blank file with permissions that will allow the web server to write to 
 ```touch index.html;
 chmod o+w index.html```
 
+Then run `parser.php`, such as by loading it in a web browser.
+
+`http://example.com/dogs/parser.php`
+
 ## To Do
 
 * Store each record within an object, rather than storing HTML
