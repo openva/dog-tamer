@@ -168,8 +168,67 @@ $localities = array(
 	'199' => 'York County'
 );
 
-/* Create the string that will store the HTML of the concatenated web pages. */
-$dogs = '
+/*
+ * Initialize the array in which we'll store our final array of data.
+ */
+$dogs = array();
+
+/*
+ * Iterate through each locality and store their listings as flat HTML.
+ */
+foreach ($localities as $id => $name)
+{
+	$html = http_retrieve('http://www.vi.virginia.gov/vdacs_dd/public/cgi-bin/public.cgi?loc='.$id.'&submit=Go');
+	preg_match_all('/Owner - ([^<]+)<br>Dog - ([^<]+)<br>([^<]+)<br>([^<]+), VA ([0-9]{5})<br><a href="([^"]+)">More Information<\/a>/', $html, $matches);
+	if ($matches)
+	{
+		
+		/*
+		 * Iterate through the URLs and prefix them properly.
+		 */
+		foreach ($matches[6] as &$url)
+		{
+			$url = 'http://www.vi.virginia.gov/vdacs_dd/public/cgi-bin/' . $url;
+		}
+		
+		/*
+		 * Pivot the arrays. Right now there's one array for each regex group, and we want to pivot
+		 * those so that we have one array for each *entry*.
+		 */
+		foreach ($matches as $group => $match)
+		{
+			if ($group === 0)
+			{
+				continue;
+			}
+			foreach ($match as $number => $field)
+			{
+				$groups = array(
+							1 => 'owner',
+							2 => 'name',
+							3 => 'street',
+							4 => 'city',
+							5 => 'zip',
+							6 => 'url');
+				$label = $groups[$group];
+				$dogs[$name][$number][$label] = trim($field);
+			}
+		}
+	}
+	unset($matches);
+}
+
+/*
+ * Store this listing as JSON.
+ */
+file_put_contents('dogs.json', json_encode($dogs));
+
+echo '<p><a href="dogs.json">dogs.json generated</a>.</p>';
+
+/*
+ * Store the listing as HTML.
+ */
+$html = '
 <!DOCTYPE html>
 <html>
 <head>
@@ -177,43 +236,84 @@ $dogs = '
 	<title>Virginia Dangerous Dog Listing</title>
 	<link rel="stylesheet" href="/css/reset.css" media="screen" />
 	<link rel="stylesheet" href="/css/master.css" media="screen" />
+	<style>
+		dl + dl {
+			margin-top: 2em;
+		}
+
+		dl {
+			padding: 0.5em;
+		}
+		dt {
+			float: left;
+			clear: left;
+			width: 100px;
+			text-align: right;
+			font-weight: bold;
+		}
+		dt:after {
+			content: ":";
+		}
+		dd {
+			margin: 0 0 0 110px;
+			padding: 0 0 0.5em 0;
+		}
+	</style>
 	<script src="https://www.google.com/jsapi?key=ABQIAAAAn01L8sl4uwWn5vTPpoEoXhSoclbV0lStNWyWkmXm7JYp1pRtdhQmMHq94Ax7asts20lRgq4acShXHw"></script>
 </head>
 <body>
 <header>
 	<h1>Virginia Dangerous Dog Registry</h1>
-	<p>A more accessible version of the list of of dogs on the
+	<p>A more accessible version of the list of dogs on the
 	<a href="http://www.vdacs.virginia.gov/animals/dogs.shtml">Virginia Dangerous Dog
 	Registry</a>. Last updated on '.date('F j, Y').'.</p>
 </header>
 <section id="page">';
 
-/* Iterate through each locality and store their listings as flat HTML. */
-foreach ($localities as $id => $name)
+/*
+ * Iterate through every locality, and then every dog, to display HTML.
+ */
+foreach ($dogs as $locality_name => $locality)
 {
-	$html = http_retrieve('http://www.vi.virginia.gov/vdacs_dd/public/cgi-bin/public.cgi?loc='.$id.'&submit=Go');
-	preg_match('/<table border="0" cellpadding="3" cellspacing="0">(.*)<\/table>/s', $html, $match);
-	if ($match)
+	$locality_anchor = str_replace(' ', '-', strtolower($locality_name));
+	$html .= '<section>
+		<h2 id="'.$locality_anchor.'">'.$locality_name.'</h2>';
+	
+	/*
+	 * Output each dog in this locality.
+	 */
+	foreach ($locality as $dog)
 	{
-		$url_name = str_replace(' ', '-', strtolower($name));
-		$dogs .= '
-			<section>
-				<h2 id="'.$url_name.'">'.$name.'</h2>
-				<table>'.$match[0].'</table>
-			</section>';
+		$html .= '<dl>';
+		foreach ($dog as $key => $value)
+		{
+			
+			if ($key == 'url')
+			{
+				$value = '<a href="' . $value . '"> ' . urlencode($value) . '</a>';
+			}
+			
+			$html .= 
+				'<dt>'.$key.'</dt>
+				 <dd>'.$value.'</dd>';
+		}
+		$html .= '</dl>';
+			
 	}
-	unset($match);
+
+	$html .= '</section>';
 }
 
-/* End our HTML. */
-$dogs .= '
+$html .= '
 </section>
 </body>
 </html>';
 
-echo '<p>Finished—<a href="index.html">index.html generated</a>.</p>';
+echo '<p><a href="index.html">index.html generated</a>.</p>';
 
-/* Save the entire listing to index.html. */
-file_put_contents('index.html', $dogs);
+/*
+ * Save the entire listing to index.html.
+ */
+file_put_contents('index.html', $html);
 
 ?>

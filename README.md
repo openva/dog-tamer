@@ -15,8 +15,6 @@ Then run `parser.php`, such as by loading it in a web browser.
 
 ## To Do
 
-* Store each record within an object, rather than storing HTML
-* Eliminate useless "More Information" links
-* Emit JSON, XML, and HTML
 * Add Google Map links to each address
 * Display all registrants as points on a map
+* Scrape the detailed information in the tabs at the target link
