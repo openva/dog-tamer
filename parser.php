@@ -178,7 +178,9 @@ $dogs = array();
  */
 foreach ($localities as $id => $name)
 {
-	$html = http_retrieve('http://www.vi.virginia.gov/vdacs_dd/public/cgi-bin/public.cgi?loc='.$id.'&submit=Go');
+	
+	$place_url = 'https://dd.va-vdacs.com/public/public.cgi?loc='.$id.'&submit=Go';
+	$html = http_retrieve($place_url);
 	preg_match_all('/Owner - ([^<]+)<br>Dog - ([^<]+)<br>([^<]+)<br>([^<]+), VA ([0-9]{5})<br><a href="([^"]+)">More Information<\/a>/', $html, $matches);
 	if ($matches)
 	{
@@ -188,7 +190,7 @@ foreach ($localities as $id => $name)
 		 */
 		foreach ($matches[6] as &$url)
 		{
-			$url = 'http://www.vi.virginia.gov/vdacs_dd/public/cgi-bin/' . $url;
+			$url = 'https://dd.va-vdacs.com/public/' . $url;
 		}
 		
 		/*
